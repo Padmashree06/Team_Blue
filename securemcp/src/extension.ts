@@ -1,26 +1,62 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
+import { McpClient } from "./mcpClient";
+import { AgentRegistry } from "./agentRegistry";
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
+let client: McpClient | undefined;
+let statusBarItem: vscode.StatusBarItem;
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "securemcp" is now active!');
+export function activate(context: vscode.ExtensionContext): void {
+  const output = vscode.window.createOutputChannel("MCP Agent Security");
+  const registry = new AgentRegistry();
 
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	const disposable = vscode.commands.registerCommand('securemcp.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from SecureMCP!');
-	});
+  statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+  statusBarItem.text = "$(circle-slash) MCP: disconnected";
+  statusBarItem.command = "mcpAgentSecurity.connect";
+  statusBarItem.show();
 
-	context.subscriptions.push(disposable);
+  context.subscriptions.push(
+    output,
+    statusBarItem,
+
+    vscode.commands.registerCommand("mcpAgentSecurity.connect", async () => {
+      const config = vscode.workspace.getConfiguration("mcpAgentSecurity");
+      const command = config.get<string>("serverCommand", "python3");
+      const args = config.get<string[]>("serverArgs", ["-m", "mcp_server"]);
+      const activeAgentId = config.get<string>("activeAgent", "anthropic");
+
+      const agent = registry.get(activeAgentId);
+      if (!agent) {
+        vscode.window.showErrorMessage(`Unknown agent provider: ${activeAgentId}`);
+        return;
+      }
+
+      client = new McpClient(output);
+      try {
+        await client.start(command, args, vscode.workspace.workspaceFolders?.[0]?.uri.fsPath);
+        statusBarItem.text = `$(check) MCP: ${agent.displayName}`;
+        statusBarItem.command = "mcpAgentSecurity.disconnect";
+        vscode.window.showInformationMessage(
+          `MCP server started. Agent provider "${agent.displayName}" is a stub — wire up its connect() next.`
+        );
+      } catch (err) {
+        output.appendLine(`[extension] connect failed: ${String(err)}`);
+        vscode.window.showErrorMessage(`Failed to start MCP server: ${String(err)}`);
+      }
+    }),
+
+    vscode.commands.registerCommand("mcpAgentSecurity.disconnect", async () => {
+      await client?.stop();
+      client = undefined;
+      statusBarItem.text = "$(circle-slash) MCP: disconnected";
+      statusBarItem.command = "mcpAgentSecurity.connect";
+    }),
+
+    vscode.commands.registerCommand("mcpAgentSecurity.showLogs", () => {
+      output.show();
+    })
+  );
 }
 
-// This method is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate(): void {
+  void client?.stop();
+}

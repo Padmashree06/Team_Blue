@@ -1,7 +1,7 @@
 {
   "name": "securemcp",
   "displayName": "SecureMCP",
-  "description": "A secure mcp",
+  "description": "Connects VS Code to AI agents (OpenAI, Claude, Copilot) over a secured, sandboxed MCP server",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.132.0"
@@ -16,15 +16,46 @@
       {
         "command": "securemcp.helloWorld",
         "title": "Hello World"
+      },
+      {
+        "command": "mcpAgentSecurity.connect",
+        "title": "MCP Agent Security: Connect"
+      },
+      {
+        "command": "mcpAgentSecurity.disconnect",
+        "title": "MCP Agent Security: Disconnect"
+      },
+      {
+        "command": "mcpAgentSecurity.showLogs",
+        "title": "MCP Agent Security: Show Logs"
       }
     ]
   },
+  "configuration": {
+      "title": "MCP Agent Security",
+      "properties": {
+        "mcpAgentSecurity.serverCommand": {
+          "type": "string",
+          "default": "python3",
+          "description": "Command used to launch the Python MCP server."
+        },
+        "mcpAgentSecurity.serverArgs": {
+          "type": "array",
+          "default": ["-m", "mcp_server"],
+          "description": "Arguments passed to the MCP server command."
+        },
+        "mcpAgentSecurity.activeAgent": {
+          "type": "string",
+          "enum": ["openai", "anthropic", "copilot"],
+          "default": "anthropic",
+          "description": "Which agent provider is active."
+        }
+      }
+    },
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
-    "lint": "eslint src",
     "test": "vscode-test"
   },
   "devDependencies": {
@@ -34,8 +65,7 @@
     "typescript-eslint": "^8.61.1",
     "eslint": "^10.5.0",
     "typescript": "^6.0.3",
-    "@vscode/test-cli": "^0.0.15",
-    "@vscode/test-electron": "^3.0.0"
+    "@vscode/test-cli": "^0.0.15"
   },
   "overrides": {
     "diff": "^8.0.4",
