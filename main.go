@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath" 
 	"os/exec"
-	"strings"
 )
 
 func main() {
@@ -52,16 +51,21 @@ func main() {
 				return // Agent disconnected
 			}
 
-			// --- SECURITY GATEKEEPER CHECK ---
-			// Check for simple prompt manipulation or dangerous destructive keywords
-			if strings.Contains(strings.ToLower(line), `"rm `) || strings.Contains(strings.ToLower(line), "delete") {
-				// Block execution and send a safe JSON-RPC error back to the AI Agent
-				securityError := `{"jsonrpc":"2.0","id":1,"error":{"code":-32603,"message":"Security Violation: Dangerous command blocked by secure-mcp."}}` + "\n"
-				os.Stdout.WriteString(securityError)
-				continue // Skip sending this malicious text to the real server!
+			// ====================================================================
+			// 🛡️ INTEGRATED SECURITY PIPELINE (From prompt-injection.go)
+			// ====================================================================
+			// Pass the incoming raw JSON string down to the inspection package
+			processedPayload, allowed := ProcessIncomingPayload([]byte(line))
+
+			if !allowed {
+				fmt.Fprintln(os.Stderr, "🚨 [SECURE-MCP LOG] Caught malicious injection! Blocking payload now.")
+				// Block execution: Write the structured JSON-RPC error back out to the Agent
+				os.Stdout.Write(processedPayload)
+				os.Stdout.Write([]byte("\n"))
+				continue // Skip sending this malicious packet to the real server!
 			}
 
-			// If safe, pass the line straight to the real MCP server
+			// If the validation check is safe, pass the line directly to the real MCP server
 			serverIn.Write([]byte(line))
 		}
 	}()
