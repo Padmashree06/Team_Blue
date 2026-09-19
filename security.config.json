@@ -1,0 +1,4 @@
+{
+  "denyPathPatterns": ["~/.ssh", "~/.aws", "~/.gnupg", "~/.netrc", "/etc/shadow", "/etc/passwd"],
+  "denyKeywords": ["rm ", "delete", "sudo", "chmod 777"]
+}
