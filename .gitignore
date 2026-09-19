@@ -1,1 +1,3 @@
 secure-mcp
+.env
+shim_audit.log

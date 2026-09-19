@@ -7,10 +7,10 @@ import (
 	"strings"
 )
 
-type Policy struct {
-	DenyPathPatterns []string `json:"denyPathPatterns"`
-	DenyKeywords     []string `json:"denyKeywords"`
-}
+// type Policy struct {
+// 	DenyPathPatterns []string `json:"denyPathPatterns"`
+// 	DenyKeywords     []string `json:"denyKeywords"`
+// }
 
 func loadPolicy(path string) (*Policy, error) {
 	data, err := os.ReadFile(path)
@@ -24,14 +24,14 @@ func loadPolicy(path string) (*Policy, error) {
 	return &p, nil
 }
 
-func expandHome(p string) string {
-	if strings.HasPrefix(p, "~") {
-		if home, err := os.UserHomeDir(); err == nil {
-			return filepath.Join(home, strings.TrimPrefix(p, "~"))
-		}
-	}
-	return p
-}
+// func expandHome(p string) string {
+// 	if strings.HasPrefix(p, "~") {
+// 		if home, err := os.UserHomeDir(); err == nil {
+// 			return filepath.Join(home, strings.TrimPrefix(p, "~"))
+// 		}
+// 	}
+// 	return p
+// }
 
 // resolvePath makes a path absolute and resolves symlinks, so a relative
 // path or a symlinked directory can't sneak past the string comparison.
